@@ -15,6 +15,15 @@ It allows you to take a completed circuit diagram and enter new parts, check exi
 
 Datasheets for components can be uploaded into the system, allowing quick access from a single place if you are working in a lab. Engineering documents (schematics and PCB overlays etc) can be uploded so they are also available from the same interface.
 
+### NEW: RESTful API
+AXTParts now includes a token-secured RESTful API that allows programmatic access to search and retrieve parts information. The API supports both GET and POST requests and returns JSON-formatted results, making it easy to integrate with:
+- Mobile applications
+- Automated inventory systems
+- External tools and scripts
+- Third-party integrations
+
+See [API Documentation](API_DOCUMENTATION.md) and [API Installation Guide](INSTALLATION_API.md) for details.
+
 ## Demo Site
 A demonstration site exists at https://axtsystems.com/axtparts/index.php
 
@@ -159,6 +168,46 @@ Since the existing application is located in axtparts/ we will move this to axtp
 # ln -s /opt/axtparts/axtparts /var/www/axtparts
 ```
 Now you should be able to use your web browser to connect to the site and log in using existing user credentials.
+
+---
+## API Access
+
+AXTParts includes a token-secured RESTful API for programmatic access to your parts inventory. 
+
+### Quick Start
+
+1. **Install the API** (for existing installations):
+   ```bash
+   mysql -u root -p axtparts < sql/axtparts-api-tokens.sql
+   ```
+
+2. **Generate an API token**:
+   - Log in as admin
+   - Navigate to Admin → API Tokens
+   - Create a new token
+
+3. **Make API requests**:
+   ```bash
+   curl -H "Authorization: Bearer YOUR_TOKEN" \
+        "http://your-server/axtparts/api-search.php?search=resistor&limit=10"
+   ```
+
+### Documentation
+
+- **[API Documentation](API_DOCUMENTATION.md)** - Complete API reference with examples
+- **[API Installation Guide](INSTALLATION_API.md)** - Detailed installation and troubleshooting
+- **[Example Python Client](example_api_client.py)** - Sample implementation
+- **[Integration Tests](test_api_integration.sh)** - Testing script
+
+### Features
+
+- Token-based authentication with Bearer tokens
+- Search by part number, description, or manufacturer code
+- JSON response format with comprehensive part details
+- Support for pagination and sorting
+- Stock and location information included
+- Component and manufacturer details
+- Both GET and POST request methods supported
 
 ---
 ## Authors
