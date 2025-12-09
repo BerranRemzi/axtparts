@@ -170,7 +170,11 @@ if ($limit < 1) {
 $results = array();
 
 if (!empty($search_text)) {
-    // Search in parts by description
+    // Search in parts by description and part number
+    // Note: Using LIKE with leading wildcards (%) can impact performance on large datasets.
+    // Consider adding FULLTEXT indexes on partdescr and partnumber columns for better performance:
+    // ALTER TABLE parts ADD FULLTEXT INDEX idx_partdescr_fulltext (partdescr);
+    // Then use MATCH() AGAINST() syntax instead of LIKE for full-text search
     $q_search = "SELECT p.partid, p.partnumber, p.partdescr, "
             . "\n pg.catdescr, "
             . "\n f.fprintdescr "
@@ -287,6 +291,9 @@ if (!empty($search_text)) {
             $found_partids[] = $r['partid'];
         }
         
+        // Search in components by manufacturer code and name
+        // Note: Using LIKE with leading wildcards (%) can impact performance on large datasets.
+        // Consider adding indexes: ALTER TABLE components ADD INDEX idx_mfgcode (mfgcode);
         $q_comp_search = "SELECT DISTINCT p.partid, p.partnumber, p.partdescr, "
                 . "\n pg.catdescr, "
                 . "\n f.fprintdescr "
