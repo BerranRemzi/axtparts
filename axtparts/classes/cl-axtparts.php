@@ -1370,6 +1370,149 @@ class axtparts implements iaxtparts
 		print "</div>";
 	}
 	
+	
+	/**
+	* @return array [tokenid]=tokenid, [token]=generated token, [status]=true if success, false if error, [error]=error message
+	* @param object dbh database object
+	* @param int uid User ID for whom to generate the token
+	* @param string token_name Name/description for the token
+	* @param string expires_at Optional expiration date (Y-m-d H:i:s format), null for no expiration
+	* @desc Generates a new API token for a user
+	*/
+	public function 
+	TokenGenerate($dbh, $uid, $token_name, $expires_at = null)
+	{
+		$rv = array();
+		
+		// Generate a secure random token
+		$token = bin2hex(random_bytes(32));
+		
+		$q_token = "INSERT INTO api_tokens "
+				. "\n SET "
+				. "\n token = '" . $dbh->real_escape_string($token) . "', "
+				. "\n token_name = '" . $dbh->real_escape_string($token_name) . "', "
+				. "\n uid = '" . $dbh->real_escape_string($uid) . "', "
+				. "\n created_at = '" . date("Y-m-d H:i:s") . "', "
+				. "\n is_active = 1";
+		
+		if ($expires_at !== null) {
+			$q_token .= ", \n expires_at = '" . $dbh->real_escape_string($expires_at) . "'";
+		}
+		
+		$s_token = $dbh->query($q_token);
+		
+		if (!$s_token) {
+			$rv["tokenid"] = false;
+			$rv["token"] = false;
+			$rv["status"] = false;
+			$rv["error"] = $dbh->error;
+		} else {
+			$rv["tokenid"] = $dbh->insert_id;
+			$rv["token"] = $token;
+			$rv["status"] = true;
+			$rv["error"] = false;
+		}
+		
+		return $rv;
+	}
+	
+	
+	/**
+	* @return array [tokens][n][...], [status]=true if success, false if error, [error]=error message
+	* @param object dbh database object
+	* @param int uid Optional user ID to filter tokens, false for all tokens
+	* @desc Reads API tokens from the database
+	*/
+	public function 
+	TokenRead($dbh, $uid = false)
+	{
+		$rv = array();
+		
+		$q_token = "SELECT t.*, u.loginid, u.username "
+				. "\n FROM api_tokens t "
+				. "\n LEFT JOIN user u ON t.uid = u.uid ";
+		
+		if ($uid !== false) {
+			$q_token .= "\n WHERE t.uid = '" . $dbh->real_escape_string($uid) . "' ";
+		}
+		
+		$q_token .= "\n ORDER BY t.created_at DESC";
+		
+		$s_token = $dbh->query($q_token);
+		
+		if (!$s_token) {
+			$rv["tokens"] = false;
+			$rv["status"] = false;
+			$rv["error"] = $dbh->error;
+		} else {
+			$n = 0;
+			$rv["tokens"] = array();
+			while ($r_token = $s_token->fetch_assoc())
+				$rv["tokens"][$n++] = $r_token;
+			$rv["status"] = true;
+			$rv["error"] = false;
+			$s_token->free();
+		}
+		
+		return $rv;
+	}
+	
+	
+	/**
+	* @return array [status]=true if success, false if error, [error]=error message
+	* @param object dbh database object
+	* @param int tokenid Token ID to revoke
+	* @desc Revokes (deactivates) an API token
+	*/
+	public function 
+	TokenRevoke($dbh, $tokenid)
+	{
+		$rv = array();
+		
+		$q_token = "UPDATE api_tokens "
+				. "\n SET is_active = 0 "
+				. "\n WHERE tokenid = '" . $dbh->real_escape_string($tokenid) . "'";
+		
+		$s_token = $dbh->query($q_token);
+		
+		if (!$s_token) {
+			$rv["status"] = false;
+			$rv["error"] = $dbh->error;
+		} else {
+			$rv["status"] = true;
+			$rv["error"] = false;
+		}
+		
+		return $rv;
+	}
+	
+	
+	/**
+	* @return array [status]=true if success, false if error, [error]=error message
+	* @param object dbh database object
+	* @param int tokenid Token ID to delete
+	* @desc Deletes an API token permanently
+	*/
+	public function 
+	TokenDelete($dbh, $tokenid)
+	{
+		$rv = array();
+		
+		$q_token = "DELETE FROM api_tokens "
+				. "\n WHERE tokenid = '" . $dbh->real_escape_string($tokenid) . "'";
+		
+		$s_token = $dbh->query($q_token);
+		
+		if (!$s_token) {
+			$rv["status"] = false;
+			$rv["error"] = $dbh->error;
+		} else {
+			$rv["status"] = true;
+			$rv["error"] = false;
+		}
+		
+		return $rv;
+	}
 
 	
 }	
