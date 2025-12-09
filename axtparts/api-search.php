@@ -185,6 +185,7 @@ if (!empty($search_text)) {
             . "\n OR p.partnumber LIKE '%" . $dbh->real_escape_string($search_text) . "%' ";
     
     // Add sorting
+    // Note: sort=4 (mfg code) is not available for parts-only search since mfgcode is in components table
     switch ($sort_by) {
         case 0:
             $q_search .= "\n ORDER BY p.partnumber ASC ";
@@ -197,6 +198,10 @@ if (!empty($search_text)) {
             break;
         case 3:
             $q_search .= "\n ORDER BY f.fprintdescr ASC ";
+            break;
+        case 4:
+            // Manufacturer code sorting not available in parts table, default to description
+            $q_search .= "\n ORDER BY p.partdescr ASC ";
             break;
         default:
             $q_search .= "\n ORDER BY p.partdescr ASC ";
