@@ -1,0 +1,23 @@
+<?PHP
+// ********************************************
+// Copyright 2003-2023 AXT Systems Pty Limited.
+// All rights reserved.
+// Author: Geoff Swan
+// ********************************************
+// Local configuration file example
+// Copy this file to config-local.php and update with your actual credentials
+// DO NOT COMMIT config-local.php TO VERSION CONTROL
+
+if (!defined("_AXTPARTSDEFS"))
+{
+	die("This file cannot be accessed directly");
+}
+
+// Database credentials
+// Update these values with your actual database connection details
+define ("PARTSUSER", "axtpartsuser");          // Database username
+define ("PARTSPASSWD", "your_password_here");  // Database password
+define ("PARTSHOST", "127.0.0.1");             // Database host (usually localhost or 127.0.0.1)
+define ("PARTSDBASE", "axtparts");             // Database name
+
+?>

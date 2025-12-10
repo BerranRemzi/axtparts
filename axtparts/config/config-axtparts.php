@@ -12,11 +12,18 @@ if (!defined("_AXTPARTSDEFS"))
 	
 	define ("ENGPARTSVERSION", "4.03");
 	
-	// the database user information
-	define ("PARTSUSER", "axtpartsuser");
-	define ("PARTSPASSWD", "DB_PASSWORD");
-	define ("PARTSHOST", "127.0.0.1");
-	define ("PARTSDBASE", "axtparts");
+	// Load local configuration file with credentials
+	$local_config = __DIR__ . '/config-local.php';
+	if (file_exists($local_config)) {
+		require_once($local_config);
+	} else {
+		die("Configuration error: config-local.php not found. Please copy config-local.php.example to config-local.php and configure your database credentials.");
+	}
+	
+	// Verify required constants are defined
+	if (!defined("PARTSUSER") || !defined("PARTSPASSWD") || !defined("PARTSHOST") || !defined("PARTSDBASE")) {
+		die("Configuration error: Database credentials not properly configured in config-local.php");
+	}
 	
 	// Company information - for reports
 	define ("ENG_RPT_CNAME", "COMPANY NAME");
