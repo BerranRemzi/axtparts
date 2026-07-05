@@ -85,11 +85,17 @@ if (isset($_POST["btn_save"]))
 				$passwd = trim($_POST["passwd"]);
 			else 
 				$passwd = "";
-				
+			
 			if ($passwd != "")
+			{
 				$hpasswd = $myparts->Passwd_ssha1($passwd);
+				$apitoken = $hpasswd;
+			}
 			else 
+			{
 				$hpasswd = false;
+				$apitoken = false;
+			}
 			
 			if ($uid === false)
 			{
@@ -112,6 +118,17 @@ if (isset($_POST["btn_save"]))
 					$muid = $myparts->SessionMeUID();
 					$logmsg = "User created: ".$loginid.": ".$username;
 					$myparts->LogSave($dbh, LOGTYPE_USERNEW, $muid, $logmsg);
+					// Fetch the stored hash to display as the API token.
+					if ($apitoken !== false)
+					{
+						$q_tok = "select passwd from user where uid='".$dbh->insert_id."' ";
+						$s_tok = $dbh->query($q_tok);
+						if ($s_tok && ($r_tok = $s_tok->fetch_assoc()))
+						{
+							$apitoken = $r_tok["passwd"];
+							$s_tok->free();
+						}
+					}
 					$myparts->UpdateParent();
 				}
 			}
@@ -138,6 +155,17 @@ if (isset($_POST["btn_save"]))
 					$muid = $myparts->SessionMeUID();
 					$logmsg = "User updated: ".$loginid.": ".$username;
 					$myparts->LogSave($dbh, LOGTYPE_USERCHANGE, $muid, $logmsg);
+					// Fetch the stored hash to display as the API token.
+					if ($apitoken !== false)
+					{
+						$q_tok = "select passwd from user where uid='".$dbh->real_escape_string($uid)."' ";
+						$s_tok = $dbh->query($q_tok);
+						if ($s_tok && ($r_tok = $s_tok->fetch_assoc()))
+						{
+							$apitoken = $r_tok["passwd"];
+							$s_tok->free();
+						}
+					}
 				}
 				$myparts->UpdateParent();
 			}
@@ -219,6 +247,7 @@ else
 	$status = 0;
 	$roleid = 0;
 	$urlargs = "";
+	$apitoken = false;
 }
 
 // Get a list of roles for the selector
@@ -304,6 +333,20 @@ $url = $formfile.$urlargs;
 	    <label class="label label-formitem" form="form-user" for="logincount">Login Count</label>
 		<input value="<?php print htmlentities($logincount) ?>" name="logincount" type="text" class="input-formelement" form="form-user" maxlength="10" title="Login count" readonly>
 	  </div>
+<?php
+if ($apitoken !== false)
+{
+?>
+      <div class="container container-pop-el">
+	    <label class="label label-formitem" form="form-user" for="apitoken">API Token (password hash)</label>
+		<input value="<?php print htmlentities($apitoken) ?>" name="apitoken" id="apitoken" type="text" class="input-formelement" form="form-user" readonly onclick="this.select()">
+	  </div>
+      <div class="container container-pop-el">
+	    <span class="text-element" style="font-size:0.85em;color:#666">Use this hash as the X-API-Token header value for API access. It is shown once — copy it now.</span>
+	  </div>
+<?php
+}
+?>
       <div class="container container-pop-btn">
 	    <button type="submit" class="btn-pop-update" form="form-user" formaction="<?php print $url ?>" value="Save" name="btn_save" id="btn_save" onclick="delClear()">Save</button>
 <?php
