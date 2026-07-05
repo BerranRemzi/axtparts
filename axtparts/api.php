@@ -143,6 +143,20 @@ switch ($action)
         $rv = $api->AddStock($partid, $locid, $qty, $note);
         break;
 
+    case "update_part":
+        if ($body === null)
+        {
+            $rv = $api->Fail("POST body (JSON) is required for this action.");
+            break;
+        }
+        $partid = isset($body["partid"]) ? $body["partid"] : false;
+        $fields = array();
+        if (array_key_exists("partdescr", $body)) $fields["partdescr"] = $body["partdescr"];
+        if (array_key_exists("partcatid", $body)) $fields["partcatid"] = $body["partcatid"];
+        if (array_key_exists("footprint", $body)) $fields["footprint"] = $body["footprint"];
+        $rv = $api->UpdatePart($partid, $fields);
+        break;
+
     default:
         $rv = $api->Fail("Unknown or missing action.");
         break;

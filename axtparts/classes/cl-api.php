@@ -418,6 +418,85 @@ class axtparts_api
         ));
     }
 
+    /**
+    * Update an existing part's mutable attributes.
+    * Required: partid. Optional (any subset): partdescr, partcatid,
+    * footprint. Only the supplied fields are changed; omitted fields
+    * are left untouched. partcatid/footprint may be set to 0 to clear
+    * them. Returns the updated partid.
+    */
+    public function
+    UpdatePart($partid, $fields = array())
+    {
+        if (!$this->HasPrivilege(UPRIV_PARTS))
+            return $this->Fail("Insufficient privileges.");
+        if (!is_numeric($partid))
+            return $this->Fail("partid must be numeric.");
+
+        $pid = (int)$partid;
+
+        // Verify the part exists.
+        $np = $this->myparts->ReturnCountOf($this->dbh, "parts", "partid", "partid", $pid);
+        if ($np == 0)
+            return $this->Fail("Part does not exist.");
+
+        // Build the SET clause from only the supplied, recognised fields.
+        $sets = array();
+        $logparts = array();
+
+        if (array_key_exists("partdescr", $fields))
+        {
+            $d = is_string($fields["partdescr"]) ? trim($fields["partdescr"]) : "";
+            if ($d === "")
+                return $this->Fail("partdescr must not be empty.");
+            $sets[] = "partdescr='".$this->dbh->real_escape_string($d)."'";
+            $logparts[] = "partdescr='".$d."'";
+        }
+
+        if (array_key_exists("partcatid", $fields))
+        {
+            $cid = is_numeric($fields["partcatid"]) ? (int)$fields["partcatid"] : 0;
+            if ($cid !== 0)
+            {
+                $nc = $this->myparts->ReturnCountOf($this->dbh, "pgroups", "partcatid", "partcatid", $cid);
+                if ($nc == 0)
+                    return $this->Fail("Category ".$cid." does not exist.");
+            }
+            $sets[] = "partcatid='".$this->dbh->real_escape_string($cid)."'";
+            $logparts[] = "partcatid=".$cid;
+        }
+
+        if (array_key_exists("footprint", $fields))
+        {
+            $fid = is_numeric($fields["footprint"]) ? (int)$fields["footprint"] : 0;
+            if ($fid !== 0)
+            {
+                $nf = $this->myparts->ReturnCountOf($this->dbh, "footprint", "fprintid", "fprintid", $fid);
+                if ($nf == 0)
+                    return $this->Fail("Footprint ".$fid." does not exist.");
+            }
+            $sets[] = "footprint='".$this->dbh->real_escape_string($fid)."'";
+            $logparts[] = "footprint=".$fid;
+        }
+
+        if (count($sets) === 0)
+            return $this->Fail("No updatable fields supplied (partdescr, partcatid, footprint).");
+
+        $q = "update parts "
+           . "\n set ".implode(", ", $sets)." "
+           . "\n where partid='".$this->dbh->real_escape_string($pid)."' ";
+        $s = $this->dbh->query($q);
+        if (!$s)
+            return $this->Fail("Database error: ".$this->dbh->error);
+
+        $this->myparts->LogSave($this->dbh, LOGTYPE_PARTCHANGE, $this->uid,
+            "API: Part updated: ".$pid." (".implode(", ", $logparts).")");
+        return $this->Ok(array(
+            "partid"  => $pid,
+            "updated" => true,
+        ));
+    }
+
     // ---------------------------------------------------------------
     // Internal helpers
     // ---------------------------------------------------------------
