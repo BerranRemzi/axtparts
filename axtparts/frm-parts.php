@@ -58,11 +58,11 @@ if (isset($_GET['pg']))
 if (!is_numeric($pg))
 	$pg = 0;
 	
-$sc = "";
+$sc = 0;
 if (isset($_GET['sc']))
 	$sc = trim($_GET["sc"]);
 if (!is_numeric($sc))
-	$sc = "";
+	$sc = 0;
 	
 // Sort direction: 0=ascending, 1=descending
 $sd = 0;
@@ -137,8 +137,8 @@ switch ($sc)
 			$q_p .= "\n order by stockqty ".$sortdir." ";
 			break;
 	default:
-			$q_p .= "\n order by partdescr ".$sortdir." ";
-			$sc = 2;
+			$q_p .= "\n order by partnumber ".$sortdir." ";
+			$sc = 0;
 			break;
 }
 

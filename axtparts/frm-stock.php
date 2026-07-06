@@ -59,11 +59,11 @@ if (isset($_GET['pg']))
 if (!is_numeric($pg))
 	$pg = 0;
 	
-$sc = 3;
+$sc = 0;
 if (isset($_GET['sc']))
 	$sc = trim($_GET["sc"]);
 if (!is_numeric($sc))
-	$sc = 3;
+	$sc = 0;
 	
 // Sort direction: 0=ascending, 1=descending
 $sd = 0;
