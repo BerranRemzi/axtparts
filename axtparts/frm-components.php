@@ -66,6 +66,13 @@ if (isset($_GET['sc']))
 if (!is_numeric($sc))
 	$sc = "";
 	
+// Sort direction: 0=ascending, 1=descending
+$sd = 0;
+if (isset($_GET['sd']))
+	$sd = intval(trim($_GET["sd"]));
+if ($sd !== 0 && $sd !== 1)
+	$sd = 0;
+	
 $fc = false;
 if (isset($_GET['fc']))
 	$fc = trim($_GET["fc"]);
@@ -77,7 +84,7 @@ if (isset($_POST["btn_filter"]))
 		$fc = trim($_POST["sel-partcat"]);
 		$myparts->SessionVarSave($var_fc, $fc);
 	}
-	$urlq = "?sc=".$sc."&fc=".$fc."&pg=".$pg;
+	$urlq = "?sc=".$sc."&sd=".$sd."&fc=".$fc."&pg=".$pg;
 	print "<script type=\"text/javascript\">top.location.href='".$formfile.$urlq."'</script>\n";
 }
 
@@ -111,29 +118,35 @@ $q_p = "select * from components "
 if (($fc !== false) && ($fc != ""))
 	$q_p .= "\n where parts.partcatid='".$dbh->real_escape_string($fc)."' ";
 	
+// Sort direction keyword
+$sortdir = ($sd == 1) ? "desc" : "asc";
+
 // Add sorting
 switch ($sc)
 {
 	case "0":
-			$q_p .= "\n order by partnumber asc ";
+			$q_p .= "\n order by partnumber ".$sortdir." ";
 			break;
 	case "1":
-			$q_p .= "\n order by catdescr asc ";
+			$q_p .= "\n order by catdescr ".$sortdir." ";
 			break;
 	case "2":
-			$q_p .= "\n order by partdescr asc ";
+			$q_p .= "\n order by partdescr ".$sortdir." ";
 			break;
 	case "3":
-			$q_p .= "\n order by mfgname asc ";
+			$q_p .= "\n order by mfgname ".$sortdir." ";
 			break;
 	case "4":
-			$q_p .= "\n order by mfgcode asc ";
+			$q_p .= "\n order by mfgcode ".$sortdir." ";
 			break;
 	case "5":
-			$q_p .= "\n order by statedescr,partnumber asc ";
+			$q_p .= "\n order by statedescr ".$sortdir.",partnumber ".$sortdir." ";
+			break;
+	case "6":
+			$q_p .= "\n order by datasheetpath ".$sortdir." ";
 			break;
 	default:
-			$q_p .= "\n order by partdescr asc ";
+			$q_p .= "\n order by partdescr ".$sortdir." ";
 			$sc = 2;
 			break;
 }
@@ -215,7 +228,7 @@ $tabparams = array();
 $tabparams["tabon"] = "Parts";
 $tabparams["tabs"] = $_cfg_tabs;
 	
-$url = $formfile."?sc=".$sc."&pg=".$pg;
+$url = $formfile."?sc=".$sc."&sd=".$sd."&pg=".$pg;
 if (($fc !== false) && ($fc != ""))
 	$url .= "&fc=".$fc;
 
@@ -266,7 +279,7 @@ if (($fc !== false) && ($fc != ""))
     </div>
     <div class="container container-pagination"><span class="text-element text-pagination-label">Page:</span>
 <?php
-$urlq = $formfile."?sc=".$sc;
+$urlq = $formfile."?sc=".$sc."&sd=".$sd;
 if (($fc !== false) && ($fc != ""))
 	$urlq .= "&fc=".$fc;
 	
@@ -294,22 +307,22 @@ for ($i = 0; $i < $np; $i++)
     </form>
     <div class="container container-gridhead-components">
       <div class="container container-gridhead-el-B0">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&pg=".$pg."&fc=".$fc ?>">Part Number</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&sd=".($sc=="0"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Part Number<?php if($sc=="0") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B0">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=2&pg=".$pg."&fc=".$fc ?>">Description</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=2&sd=".($sc=="2"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Description<?php if($sc=="2") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B1">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=1&pg=".$pg."&fc=".$fc ?>">Category</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=1&sd=".($sc=="1"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Category<?php if($sc=="1") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B2">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=4&pg=".$pg."&fc=".$fc ?>">Mfg Part</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=4&sd=".($sc=="4"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Mfg Part<?php if($sc=="4") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B2">
-        <span class="text-element text-gridhead-column">DSht</span>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=6&sd=".($sc=="6"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">DSht<?php if($sc=="6") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B2">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=5&pg=".$pg."&fc=".$fc ?>">Status</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=5&sd=".($sc=="5"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Status<?php if($sc=="5") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
     </div>
 <?php

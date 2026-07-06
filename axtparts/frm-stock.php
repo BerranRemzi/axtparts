@@ -65,6 +65,13 @@ if (isset($_GET['sc']))
 if (!is_numeric($sc))
 	$sc = 3;
 	
+// Sort direction: 0=ascending, 1=descending
+$sd = 0;
+if (isset($_GET['sd']))
+	$sd = intval(trim($_GET["sd"]));
+if ($sd !== 0 && $sd !== 1)
+	$sd = 0;
+	
 $fc = false;
 if (isset($_GET['fc']))
 	$fc = trim($_GET["fc"]);
@@ -76,7 +83,7 @@ if (isset($_POST["btn_filter"]))
 		$fc = trim($_POST["sel-partcat"]);
 		$myparts->SessionVarSave($var_fc, $fc);
 	}
-	$urlq = "?sc=".$sc."&fc=".$fc."&pg=".$pg;
+	$urlq = "?sc=".$sc."&sd=".$sd."&fc=".$fc."&pg=".$pg;
 	print "<script type=\"text/javascript\">top.location.href='".$formfile.$urlq."'</script>\n";
 }
 
@@ -109,26 +116,32 @@ $q_p = "select * from stock "
 if (($fc !== false) && ($fc != ""))
 	$q_p .= "\n and parts.partcatid='".$dbh->real_escape_string($fc)."' ";
 	
+// Sort direction keyword
+$sortdir = ($sd == 1) ? "desc" : "asc";
+
 // Add sorting
 switch ($sc)
 {
 	case "0":
-			$q_p .= "\n order by partnumber asc ";
+			$q_p .= "\n order by partnumber ".$sortdir." ";
 			break;
 	case "1":
-			$q_p .= "\n order by catdescr asc ";
+			$q_p .= "\n order by catdescr ".$sortdir." ";
 			break;
 	case "2":
-			$q_p .= "\n order by partdescr asc ";
+			$q_p .= "\n order by partdescr ".$sortdir." ";
 			break;
 	case "3":
-			$q_p .= "\n order by locdescr asc ";
+			$q_p .= "\n order by locdescr ".$sortdir." ";
 			break;
 	case "4":
-			$q_p .= "\n order by locref asc ";
+			$q_p .= "\n order by locref ".$sortdir." ";
+			break;
+	case "5":
+			$q_p .= "\n order by qty ".$sortdir." ";
 			break;
 	default:
-			$q_p .= "\n order by partnumber asc ";
+			$q_p .= "\n order by partnumber ".$sortdir." ";
 			break;
 }
 
@@ -209,7 +222,7 @@ $tabparams = array();
 $tabparams["tabon"] = "Parts";
 $tabparams["tabs"] = $_cfg_tabs;
 
-$url = $formfile."?sc=".$sc."&pg=".$pg;
+$url = $formfile."?sc=".$sc."&sd=".$sd."&pg=".$pg;
 if (($fc !== false) && ($fc != ""))
 	$url .= "&fc=".$fc;
 	
@@ -260,7 +273,7 @@ if (($fc !== false) && ($fc != ""))
     </div>
     <div class="container container-pagination"><span class="text-element text-pagination-label">Page:</span>
 <?php
-$urlq = $formfile."?sc=".$sc;
+$urlq = $formfile."?sc=".$sc."&sd=".$sd;
 if (($fc !== false) && ($fc != ""))
 	$urlq .= "&fc=".$fc;
 	
@@ -287,19 +300,19 @@ for ($i = 0; $i < $np; $i++)
     </form>
     <div class="container container-gridhead-stock">
       <div class="container container-gridhead-el-B0">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&pg=".$pg."&fc=".$fc ?>">Part Number</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&sd=".($sc=="0"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Part Number<?php if($sc=="0") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B0">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=2&pg=".$pg."&fc=".$fc ?>">Description</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=2&sd=".($sc=="2"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Description<?php if($sc=="2") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B1">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=3&pg=".$pg."&fc=".$fc ?>">Loc Ref</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=3&sd=".($sc=="3"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Loc Ref<?php if($sc=="3") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B1">
-        <span class="text-element text-gridhead-column">Qty</span>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=5&sd=".($sc=="5"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Qty<?php if($sc=="5") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B2">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=4&pg=".$pg."&fc=".$fc ?>">Location</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=4&sd=".($sc=="4"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Location<?php if($sc=="4") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
     </div>
 <?php

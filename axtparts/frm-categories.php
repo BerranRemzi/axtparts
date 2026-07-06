@@ -60,21 +60,37 @@ if (isset($_GET['sc']))
 if (!is_numeric($sc))
 	$sc = 0;
 	
+// Sort direction: 0=ascending, 1=descending
+$sd = 0;
+if (isset($_GET['sd']))
+	$sd = intval(trim($_GET["sd"]));
+if ($sd !== 0 && $sd !== 1)
+	$sd = 0;
+	
 // Retrieve the states for display
 $dset = array();
-$q_p = "select * from pgroups ";
+$q_p = "select pgroups.*, "
+	. "\n (select count(*) from parts where parts.partcatid=pgroups.partcatid) as numusing "
+	. "\n from pgroups "
+	;
+
+// Sort direction keyword
+$sortdir = ($sd == 1) ? "desc" : "asc";
 
 // Add sorting
 switch ($sc)
 {
 	case "0":
-			$q_p .= "\n order by catdescr asc ";
+			$q_p .= "\n order by catdescr ".$sortdir." ";
 			break;
 	case "1":
-			$q_p .= "\n order by datadir asc ";
+			$q_p .= "\n order by datadir ".$sortdir." ";
+			break;
+	case "2":
+			$q_p .= "\n order by numusing ".$sortdir." ";
 			break;
 	default:
-			$q_p .= "\n order by catdescr asc ";
+			$q_p .= "\n order by catdescr ".$sortdir." ";
 			break;
 }
 
@@ -90,16 +106,9 @@ if ($s_p)
 		$dset[$i]["partcatid"] = $r_p["partcatid"];
 		$dset[$i]["catdescr"] = $r_p["catdescr"];
 		$dset[$i]["datadir"] = $r_p["datadir"];
-		$q_n = "select partid from parts "
-			. "\n where partcatid='".$r_p["partcatid"]."' "
-			;
-		$s_n = $dbh->query($q_n);
 		$dset[$i]["numusing"] = 0;
-		if ($s_n)
-		{
-			$dset[$i]["numusing"] = $s_n->num_rows;
-			$s_n->free();
-		}
+		if ($r_p["numusing"] !== null)
+			$dset[$i]["numusing"] = $r_p["numusing"];
 		$i++;
 	}
 	$s_p->free();
@@ -127,7 +136,7 @@ $tabparams = array();
 $tabparams["tabon"] = "Parts";
 $tabparams["tabs"] = $_cfg_tabs;
 
-$url = $formfile."?sc=".$sc."&pg=".$pg;
+$url = $formfile."?sc=".$sc."&sd=".$sd."&pg=".$pg;
 
 ?>
 <!DOCTYPE html>
@@ -176,7 +185,7 @@ $url = $formfile."?sc=".$sc."&pg=".$pg;
     </div>
     <div class="container container-pagination"><span class="text-element text-pagination-label">Page:</span>
 <?php
-$urlq = $formfile."?sc=".$sc;
+$urlq = $formfile."?sc=".$sc."&sd=".$sd;
 for ($i = 0; $i < $np; $i++)
 {
 	if ($pg == $i)
@@ -191,13 +200,13 @@ for ($i = 0; $i < $np; $i++)
     </div>
     <div class="container container-gridhead-partcats">
       <div class="container container-gridhead-el-B0">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&pg=".$pg ?>">Part Category</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&sd=".($sc=="0"?($sd==0?1:0):0)."&pg=".$pg ?>">Part Category<?php if($sc=="0") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B0">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=1&pg=".$pg ?>">Data Directory</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=1&sd=".($sc=="1"?($sd==0?1:0):0)."&pg=".$pg ?>">Data Directory<?php if($sc=="1") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B1">
-        <span class="text-element text-gridhead-column">Parts Using</span>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=2&sd=".($sc=="2"?($sd==0?1:0):0)."&pg=".$pg ?>">Parts Using<?php if($sc=="2") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
     </div>
 <?php

@@ -62,6 +62,13 @@ if (isset($_GET['sc']))
 if (!is_numeric($sc))
 	$sc = 0;
 	
+// Sort direction: 0=ascending, 1=descending
+$sd = 0;
+if (isset($_GET['sd']))
+	$sd = intval(trim($_GET["sd"]));
+if ($sd !== 0 && $sd !== 1)
+	$sd = 0;
+	
 $fc = false;
 if (isset($_GET['fc']))
 	$fc = trim($_GET["fc"]);
@@ -73,7 +80,7 @@ if (isset($_POST["btn_filter"]))
 		$fc = trim($_POST["sel-partcat"]);
 		$myparts->SessionVarSave($var_fc, $fc);
 	}
-	$urlq = "?sc=".$sc."&fc=".$fc."&pg=".$pg;
+	$urlq = "?sc=".$sc."&sd=".$sd."&fc=".$fc."&pg=".$pg;
 	print "<script type=\"text/javascript\">top.location.href='".$formfile.$urlq."'</script>\n";
 }
 
@@ -95,28 +102,36 @@ else
 
 // Retrieve the states for display
 $dset = array();
-$q_p = "select * from datasheets "
-	." \n left join pgroups on pgroups.partcatid=datasheets.partcatid "
+$q_p = "select datasheets.*, pgroups.*, "
+	." \n (select count(*) from components where components.datasheet=datasheets.dataid) as numusing "
+	." \n from datasheets "
+	."\n left join pgroups on pgroups.partcatid=datasheets.partcatid "
 	;
 
 // filter by category if selected
 if (($fc !== false) && ($fc != ""))
 	$q_p .= "\n where datasheets.partcatid='".$dbh->real_escape_string($fc)."' ";
 	
+// Sort direction keyword
+$sortdir = ($sd == 1) ? "desc" : "asc";
+
 // Add sorting
 switch ($sc)
 {
 	case "0":
-			$q_p .= "\n order by datadescr asc ";
+			$q_p .= "\n order by datadescr ".$sortdir." ";
 			break;
 	case "1":
-			$q_p .= "\n order by datasheetpath asc ";
+			$q_p .= "\n order by datasheetpath ".$sortdir." ";
 			break;
 	case "2":
-			$q_p .= "\n order by catdescr asc ";
+			$q_p .= "\n order by catdescr ".$sortdir." ";
+			break;
+	case "3":
+			$q_p .= "\n order by numusing ".$sortdir." ";
 			break;
 	default:
-			$q_p .= "\n order by datadescr asc ";
+			$q_p .= "\n order by datadescr ".$sortdir." ";
 			break;
 }
 
@@ -135,16 +150,9 @@ if ($s_p)
 		$dset[$i]["datadir"] = $r_p["datadir"];
 		$dset[$i]["catid"] = $r_p["partcatid"];
 		$dset[$i]["category"] = $r_p["catdescr"];
-		$q_n = "select compid from components "
-			. "\n where datasheet='".$r_p["dataid"]."' "
-			;
-		$s_n = $dbh->query($q_n);
 		$dset[$i]["numusing"] = 0;
-		if ($s_n)
-		{
-			$dset[$i]["numusing"] = $s_n->num_rows;
-			$s_n->free();
-		}
+		if ($r_p["numusing"] !== null)
+			$dset[$i]["numusing"] = $r_p["numusing"];
 		$i++;
 	}
 	$s_p->free();
@@ -197,7 +205,7 @@ $tabparams = array();
 $tabparams["tabon"] = "Parts";
 $tabparams["tabs"] = $_cfg_tabs;
 
-$url = $formfile."?sc=".$sc."&pg=".$pg;
+$url = $formfile."?sc=".$sc."&sd=".$sd."&pg=".$pg;
 if (($fc !== false) && ($fc != ""))
 	$url .= "&fc=".$fc;
 
@@ -248,7 +256,7 @@ if (($fc !== false) && ($fc != ""))
     </div>
     <div class="container container-pagination"><span class="text-element text-pagination-label">Page:</span>
 <?php
-$urlq = $formfile."?sc=".$sc;
+$urlq = $formfile."?sc=".$sc."&sd=".$sd;
 if (($fc !== false) && ($fc != ""))
 	$urlq .= "&fc=".$fc;
 	
@@ -276,16 +284,16 @@ for ($i = 0; $i < $np; $i++)
     </form>
     <div class="container container-gridhead-datasheets">
       <div class="container container-gridhead-el-B0">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&pg=".$pg."&fc=".$fc ?>" title="Sort by datasheet description">Datasheet Description</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&sd=".($sc=="0"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>" title="Sort by datasheet description">Datasheet Description<?php if($sc=="0") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B0">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=1&pg=".$pg."&fc=".$fc ?>" title="Sort by datasheet location">Datasheet File</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=1&sd=".($sc=="1"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>" title="Sort by datasheet location">Datasheet File<?php if($sc=="1") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B1">
-        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=2&pg=".$pg."&fc=".$fc ?>" title="Sort by category">Category</a>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=2&sd=".($sc=="2"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>" title="Sort by category">Category<?php if($sc=="2") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B2">
-        <span class="text-element text-gridhead-column">Using</span>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=3&sd=".($sc=="3"?($sd==0?1:0):0)."&pg=".$pg."&fc=".$fc ?>">Using<?php if($sc=="3") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
     </div>
 <?php

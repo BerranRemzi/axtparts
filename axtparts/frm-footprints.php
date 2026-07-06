@@ -59,21 +59,34 @@ if (isset($_GET['sc']))
 if (!is_numeric($sc))
 	$sc = 0;
 	
+// Sort direction: 0=ascending, 1=descending
+$sd = 0;
+if (isset($_GET['sd']))
+	$sd = intval(trim($_GET["sd"]));
+if ($sd !== 0 && $sd !== 1)
+	$sd = 0;
+	
 // Retrieve the states for display
 $dset = array();
-$q_p = "select fprintid, "
-	. "\n fprintdescr "
+$q_p = "select footprint.*, "
+	. "\n (select count(*) from parts where parts.footprint=footprint.fprintid) as numusing "
 	. "\n from footprint "
 	;
+
+// Sort direction keyword
+$sortdir = ($sd == 1) ? "desc" : "asc";
 
 // Add sorting
 switch ($sc)
 {
 	case "0":
-			$q_p .= "\n order by fprintdescr asc ";
+			$q_p .= "\n order by fprintdescr ".$sortdir." ";
+			break;
+	case "1":
+			$q_p .= "\n order by numusing ".$sortdir." ";
 			break;
 	default:
-			$q_p .= "\n order by fprintdescr asc ";
+			$q_p .= "\n order by fprintdescr ".$sortdir." ";
 			break;
 }
 
@@ -88,17 +101,9 @@ if ($s_p)
 	{
 		$dset[$i]["fprintid"] = $r_p["fprintid"];
 		$dset[$i]["fprintdescr"] = $r_p["fprintdescr"];
-		$q_n = "select partid "
-			. "\n from parts "
-			. "\n where footprint='".$r_p["fprintid"]."' "
-			;
-		$s_n = $dbh->query($q_n);
 		$dset[$i]["numusing"] = 0;
-		if ($s_n)
-		{
-			$dset[$i]["numusing"] = $s_n->num_rows;
-			$s_n->free();
-		}
+		if ($r_p["numusing"] !== null)
+			$dset[$i]["numusing"] = $r_p["numusing"];
 		$i++;
 	}
 	$s_p->free();
@@ -126,7 +131,7 @@ $tabparams = array();
 $tabparams["tabon"] = "Parts";
 $tabparams["tabs"] = $_cfg_tabs;
 
-$url = $formfile."?sc=".$sc."&pg=".$pg;
+$url = $formfile."?sc=".$sc."&sd=".$sd."&pg=".$pg;
 
 ?>
 <!DOCTYPE html>
@@ -175,7 +180,7 @@ $url = $formfile."?sc=".$sc."&pg=".$pg;
     </div>
     <div class="container container-pagination"><span class="text-element text-pagination-label">Page:</span>
 <?php
-$urlq = $formfile."?sc=".$sc;
+$urlq = $formfile."?sc=".$sc."&sd=".$sd;
 for ($i = 0; $i < $np; $i++)
 {
 	if ($pg == $i)
@@ -190,10 +195,10 @@ for ($i = 0; $i < $np; $i++)
     </div>
     <div class="container container-gridhead-fprint">
       <div class="container container-gridhead-el-B0">
-        <span class="text-element text-gridhead-column">Part Footprint</span>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&sd=".($sc=="0"?($sd==0?1:0):0)."&pg=".$pg ?>">Part Footprint<?php if($sc=="0") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B0">
-        <span class="text-element text-gridhead-column">Parts Using</span>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=1&sd=".($sc=="1"?($sd==0?1:0):0)."&pg=".$pg ?>">Parts Using<?php if($sc=="1") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
     </div>
 <?php

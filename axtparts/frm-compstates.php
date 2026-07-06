@@ -59,21 +59,34 @@ if (isset($_GET['sc']))
 if (!is_numeric($sc))
 	$sc = 0;
 	
+// Sort direction: 0=ascending, 1=descending
+$sd = 0;
+if (isset($_GET['sd']))
+	$sd = intval(trim($_GET["sd"]));
+if ($sd !== 0 && $sd !== 1)
+	$sd = 0;
+	
 // Retrieve the states for display
 $dset = array();
-$q_p = "select compstateid, "
-	. "\n statedescr "
+$q_p = "select compstates.*, "
+	. "\n (select count(*) from components where components.compstateid=compstates.compstateid) as numusing "
 	. "\n from compstates "
 	;
+
+// Sort direction keyword
+$sortdir = ($sd == 1) ? "desc" : "asc";
 
 // Add sorting
 switch ($sc)
 {
 	case "0":
-			$q_p .= "\n order by statedescr asc ";
+			$q_p .= "\n order by statedescr ".$sortdir." ";
+			break;
+	case "1":
+			$q_p .= "\n order by numusing ".$sortdir." ";
 			break;
 	default:
-			$q_p .= "\n order by statedescr asc ";
+			$q_p .= "\n order by statedescr ".$sortdir." ";
 			break;
 }
 
@@ -88,16 +101,9 @@ if ($s_p)
 	{
 		$dset[$i]["compstateid"] = $r_p["compstateid"];
 		$dset[$i]["statedescr"] = $r_p["statedescr"];
-		$q_n = "select compid from components "
-			. "\n where compstateid='".$r_p["compstateid"]."' "
-			;
-		$s_n = $dbh->query($q_n);
 		$dset[$i]["numusing"] = 0;
-		if ($s_n)
-		{
-			$dset[$i]["numusing"] = $s_n->num_rows;
-			$s_n->free();
-		}
+		if ($r_p["numusing"] !== null)
+			$dset[$i]["numusing"] = $r_p["numusing"];
 		$i++;
 	}
 	$s_p->free();
@@ -125,7 +131,7 @@ $tabparams = array();
 $tabparams["tabon"] = "Parts";
 $tabparams["tabs"] = $_cfg_tabs;
 
-$url = $formfile."?sc=".$sc."&pg=".$pg;
+$url = $formfile."?sc=".$sc."&sd=".$sd."&pg=".$pg;
 
 ?>
 <!DOCTYPE html>
@@ -175,7 +181,7 @@ $url = $formfile."?sc=".$sc."&pg=".$pg;
     <div class="container container-pagination">
 	<span class="text-element text-pagination-label">Page:</span>
 <?php
-$urlq = $formfile."?sc=".$sc;
+$urlq = $formfile."?sc=".$sc."&sd=".$sd;
 for ($i = 0; $i < $np; $i++)
 {
 	if ($pg == $i)
@@ -190,10 +196,10 @@ for ($i = 0; $i < $np; $i++)
     </div>
     <div class="container container-gridhead-compstate">
       <div class="container container-gridhead-el-B0">
-        <span class="text-element text-gridhead-column">Component State</span>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=0&sd=".($sc=="0"?($sd==0?1:0):0)."&pg=".$pg ?>">Component State<?php if($sc=="0") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
       <div class="container container-gridhead-el-B0">
-        <span class="text-element text-gridhead-column">Comps Using</span>
+        <a class="link-text link-gridhead-column" href="<?php print $formfile."?sc=1&sd=".($sc=="1"?($sd==0?1:0):0)."&pg=".$pg ?>">Comps Using<?php if($sc=="1") print $sd==0?" \u{25B2}":" \u{25BC}"; ?></a>
       </div>
     </div>
 <?php
